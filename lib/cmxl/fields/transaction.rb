@@ -2,12 +2,12 @@ module Cmxl
   module Fields
     class Transaction < Field
       self.tag = 61
-      self.parser = %r{^(?<date>\d{6})(?<entry_date>\d{4})?(?<storno_flag>R?)(?<funds_code>[CD]{1})(?<currency_letter>[a-zA-Z])?(?<amount>\d{1,12},\d{0,2})(?<swift_code>(?:N|F|S).{3})(?<reference>NONREF|(.(?!\/\/)){,16}([^\/]){,1})((?:\/\/)(?<bank_reference>[^\n]{,16}))?((?:\n)(?<supplementary>.{,34}))?$}
+      self.parser = /^(?<date>\d{6})(?<entry_date>\d{4})?(?<storno_flag>R?)(?<funds_code>[CD]{1})(?<currency_letter>[a-zA-Z])?(?<amount>\d{1,12},\d{0,2})(?<swift_code>(?:N|F).{3})(?<reference>NONREF|.{0,16})(?:$|\/\/)(?<bank_reference>.*)/i
 
       attr_accessor :details
 
       def add_meta_data(content)
-        self.details = Cmxl::Fields::StatementDetails.parse(content) unless content.nil?
+        self.details = Cmxl::Fields::StatementDetails.parse(content, fields_regex) unless content.nil?
       end
 
       def sha
@@ -104,6 +104,10 @@ module Cmxl
 
       def information
         details.information if details
+      end
+
+      def short_information
+        details.short_information if details
       end
 
       def bic

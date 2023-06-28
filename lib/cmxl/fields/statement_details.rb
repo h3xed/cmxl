@@ -5,9 +5,9 @@ module Cmxl
       self.parser = /(?<transaction_code>\w{3})(?<details>(?<seperator>.).*)/
 
       class << self
-        def parse(line)
+        def parse(line, fields_regex)
           # remove line breaks as they are allowed via documentation but not needed for data-parsing
-          super line.delete("\n")
+          super(line.delete("\n"), fields_regex)
         end
       end
 
@@ -25,6 +25,11 @@ module Cmxl
 
       def information
         info = (20..29).to_a.collect { |i| sub_fields[i.to_s] }.join('')
+        info.empty? ? description : info
+      end
+
+      def short_information
+        info = (20..28).to_a.collect { |i| sub_fields[i.to_s] }.join('')
         info.empty? ? description : info
       end
 
@@ -61,6 +66,7 @@ module Cmxl
           'name' => name,
           'sepa' => sepa,
           'information' => information,
+          'short_information' => short_information,
           'description' => description,
           'sub_fields' => sub_fields,
           'transaction_code' => transaction_code,

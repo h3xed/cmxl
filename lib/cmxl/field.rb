@@ -5,11 +5,11 @@ module Cmxl
     class Unknown < Field
       @parser = /(?<source>.*)/
       def to_h
-        { tag: tag, modifier: modifier, source: source }
+        { tag: tag, modifier: modifier, source: source, custom_regex: custom_regex }
       end
     end
     DATE = /(?<year>\d{0,2})(?<month>\d{2})(?<day>\d{2})/.freeze
-    attr_accessor :source, :modifier, :match, :data, :tag
+    attr_accessor :source, :modifier, :match, :data, :tag, :custom_regex, :fields_regex
 
     # The parser class variable is the registry of all available parser.
     # It is a hash with the tag (MT940 field number/tag) as key and the class as value
@@ -46,24 +46,28 @@ module Cmxl
     #
     # Cmxl::Field.parse(':60F:C031002PLN40000,00') #=> returns an AccountBalance instance
     #
-    def self.parse(line)
+    def self.parse(line, fields_regex = {})
       if line =~ /\A:(\w{2,2})(\w)?:(.*)\z/m
         tag = Regexp.last_match(1)
         modifier = Regexp.last_match(2)
         content = Regexp.last_match(3).delete("\r").gsub(/\n\z/, '') # remove trailing line break to prevent empty field parsing
-        Field.parsers[tag.to_s].new(content, modifier, tag)
+
+        Field.parsers[tag.to_s].new(content, modifier, tag, fields_regex[tag], fields_regex)
       else
         raise LineFormatError, "Wrong line format: #{line.dump}" if Cmxl.config[:raise_line_format_errors]
       end
     end
 
-    def initialize(source, modifier = nil, tag = nil)
+    def initialize(source, modifier = nil, tag = nil, custom_regex = nil, fields_regex = {})
       self.tag = tag
       self.modifier = modifier
       self.source = source
       self.data = {}
+      self.fields_regex = fields_regex
 
-      if self.match = self.source.match(self.class.parser)
+      custom_parser = custom_regex if custom_regex.present?
+
+      if self.match = self.source.match(custom_parser || self.class.parser)
         match.names.each do |name|
           data[name] = match[name]
         end

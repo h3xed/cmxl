@@ -1,7 +1,7 @@
 require 'digest/sha2'
 module Cmxl
   class Statement
-    attr_accessor :source, :collection, :fields, :lines
+    attr_accessor :source, :collection, :fields, :lines, :fields_regex
 
     # Public: Initiate a new Statement and parse a provided single statement string
     # It directly parses the source and initiates file and transaction objects.
@@ -9,10 +9,12 @@ module Cmxl
     # Example:
     #
     # Cmxl::Statement.new(single_statement_string)
-    def initialize(source)
+    def initialize(source, fields_regex = {})
       self.source = source
       self.fields = []
       self.lines = []
+      self.fields_regex = fields_regex
+
       strip_headers! if Cmxl.config[:strip_headers]
       parse!
     end
@@ -34,7 +36,7 @@ module Cmxl
             field.add_meta_data(line)
           end
         else
-          field = Field.parse(line)
+          field = Field.parse(line, fields_regex)
           fields << field unless field.nil?
         end
       end

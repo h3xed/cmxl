@@ -28,7 +28,7 @@ module Cmxl
   # Cmxl.parse(mt940_string)
   #
   # Returns an array of Statement objects
-  def self.parse(data, options = {})
+  def self.parse(data, options = {}, fields_regex = {})
     options[:statement_separator] ||= config[:statement_separator]
     # if no encoding is provided we try to guess using CharDet
     if options[:encoding].nil? && cd = CharDet.detect(data, silent: true)
@@ -41,6 +41,9 @@ module Cmxl
       data.encode!('UTF-8', **options) unless options.empty?
     end
 
-    data.split(options[:statement_separator]).reject { |s| s.strip.empty? }.collect { |s| Cmxl::Statement.new(s.strip) }
+    data
+      .split(options[:statement_separator])
+      .reject { |s| s.strip.empty? }
+      .collect { |s| Cmxl::Statement.new(s.strip, fields_regex) }
   end
 end

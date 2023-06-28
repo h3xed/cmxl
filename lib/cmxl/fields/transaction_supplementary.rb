@@ -4,10 +4,10 @@ module Cmxl
       attr_accessor :source, :initial, :charges
 
       class << self
-        def parse(line)
+        def parse(line, fields_regex)
           initial = Regexp.last_match(1) if line && line.match(initial_parser)
           charges = Regexp.last_match(1) if line && line.match(charges_parser)
-          new(line, initial, charges)
+          new(line, initial, charges, fields_regex)
         end
 
         def initial_parser
@@ -19,10 +19,11 @@ module Cmxl
         end
       end
 
-      def initialize(line, initial, charges)
+      def initialize(line, initial, charges, fields_regex)
         self.source = line
         self.initial = initial
         self.charges = charges
+        self.fields_regex = fields_regex
       end
 
       def initial_amount_in_cents
